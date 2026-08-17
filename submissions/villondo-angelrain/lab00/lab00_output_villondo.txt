@@ -1,0 +1,5 @@
+print("Python is Working")
+
+PS C:\Users\AngelV\Downloads\NUMSOL\Python-Practice> python -u "c:\Users\AngelV\Downloads\NUMSOL\Python-Practice\Hello.py"
+Python is Working
+PS C:\Users\AngelV\Downloads\NUMSOL\Python-Practice> 
