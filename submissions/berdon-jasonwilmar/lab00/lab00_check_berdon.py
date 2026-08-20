@@ -1,7 +1,7 @@
 """
 Lab Assignment 0 - platform verification
-Name           : <Jason Wilmar Q. Berdon>
-Student number : <TUPM-23-0134>
+Name           : Jason Wilmar Q. Berdon
+Student number : TUPM-23-0134
 """
 import os
 import sys
