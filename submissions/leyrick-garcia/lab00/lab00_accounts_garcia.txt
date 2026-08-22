@@ -1,3 +1,0 @@
-leyrick-garcia
-Claude and Gemini
-https://github.com/leyrick-garcia/numerical-methods-lab
