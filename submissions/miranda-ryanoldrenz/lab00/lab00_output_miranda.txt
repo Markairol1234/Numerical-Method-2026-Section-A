@@ -1,5 +1,0 @@
-print("python is working")
-
-PS C:\Users\Lenovo\Downloads\python practice> python -u "c:\Users\Lenovo\Downloads\python practice\hello.py"
-python is working
-PS C:\Users\Lenovo\Downloads\python practice> 
