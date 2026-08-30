@@ -1,7 +1,6 @@
-Registered AI Assistant
-
-1. CLAUDE 
-2. GEMINI
+renierjake-sabila
+CLAUDE
+GEMINI
 
 Repository URL
 https://github.com/renierjake-sabila/numerical-methods-lab
