@@ -1,0 +1,10 @@
+Registered AI Assistant
+
+1. CHATGPT 
+2. CLAUDE 
+3. GITHUB COPILOT 
+4. GEMINI
+
+
+Repository URL
+https://github.com/renierjake-sabila/numerical-methods-lab
