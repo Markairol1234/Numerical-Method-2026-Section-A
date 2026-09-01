@@ -1,6 +1,6 @@
 """
 Lab Assignment 0 - platform verification
-Name : <Louis Edward Dionco Paborian>
+Name : Louis Edward Dionco Paborian
 Student Number : <TUPM-23-0469>
 """
 import os
