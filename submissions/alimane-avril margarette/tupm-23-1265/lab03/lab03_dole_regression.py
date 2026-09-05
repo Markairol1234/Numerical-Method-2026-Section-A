@@ -1,0 +1,73 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Data
+x = np.array(
+    [
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+    ],
+    dtype=float,
+)
+y = np.array(
+    [
+        382,
+        382,
+        404,
+        426,
+        446,
+        456,
+        466,
+        481,
+        481,
+        512,
+        537,
+        537,
+        537,
+        537,
+        570,
+        610,
+    ],
+    dtype=float,
+)
+
+# Least squares regression parameters
+n = len(x)
+a1 = (n * np.sum(x * y) - np.sum(x) * np.sum(y)) / (
+    n * np.sum(x**2) - (np.sum(x)) ** 2
+)
+a0 = (np.sum(y) - a1 * np.sum(x)) / n
+
+# Calculate Residuals (e = y - y_pred)
+y_pred = a0 + a1 * x
+residuals = y - y_pred
+
+# Generate and Save Residual Plot
+plt.figure(figsize=(8, 4))
+plt.scatter(
+    x, residuals, color="#1f4e79", edgecolors="black", s=50, zorder=3
+)
+plt.axhline(0, color="#d9534f", linestyle="--", linewidth=1.5)
+plt.xlabel("Year (x)")
+plt.ylabel("Residuals (PHP)")
+plt.title("Residual Plot: NCR Minimum Wage Regression")
+plt.grid(True, linestyle="--", alpha=0.6)
+plt.tight_layout()
+
+# SAVE BEFORE SHOWING
+plt.savefig("wage_residual_plot.png", dpi=300)
+plt.show()
