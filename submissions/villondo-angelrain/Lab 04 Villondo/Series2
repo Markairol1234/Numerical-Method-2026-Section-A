@@ -1,0 +1,287 @@
+import math
+import webbrowser
+import os
+import matplotlib.pyplot as plt
+
+# ==========================================
+# PART 1: GEOMETRIC SERIES IMPLEMENTATION
+# ==========================================
+def geometric_sum(x, N):
+    """Calculate partial sum of geometric series: 1 + x + x^2 + ... + x^N[cite: 1]."""
+    total = 0.0
+    for k in range(N + 1):
+        total += x ** k
+    return total
+
+# ==========================================
+# PART 2: POWER SERIES IMPLEMENTATION
+# ==========================================
+def power_series(x, coefficients):
+    """Evaluate P_N(x) with given coefficients[cite: 1]."""
+    result = 0.0
+    for k, a_k in enumerate(coefficients):
+        result += a_k * (x ** k)
+    return result
+
+# ==========================================
+# PART 3: MACLAURIN SERIES FOR sin(theta)
+# ==========================================
+def sin_maclaurin(theta, N):
+    """Approximate sin(theta) with N terms using Maclaurin series[cite: 1]."""
+    result = 0.0
+    for n in range(N):
+        sign = (-1) ** n
+        factorial = math.factorial(2 * n + 1)
+        result += sign * (theta ** (2 * n + 1)) / factorial
+    return result
+
+# ==========================================
+# PART 5: TAYLOR SERIES FOR sin(theta)
+# ==========================================
+def sin_taylor(theta, a, N):
+    """Approximate sin(theta) using Taylor series centered at a[cite: 1]."""
+    result = 0.0
+    sin_a, cos_a = math.sin(a), math.cos(a)
+    for n in range(N):
+        derivative_pattern = n % 4
+        if derivative_pattern == 0:
+            f_deriv = sin_a
+        elif derivative_pattern == 1:
+            f_deriv = cos_a
+        elif derivative_pattern == 2:
+            f_deriv = -sin_a
+        else:
+            f_deriv = -cos_a
+        term = f_deriv * ((theta - a) ** n) / math.factorial(n)
+        result += term
+    return result
+
+# ==========================================
+# NUMERICAL TABLES & COMBINED PLOT GENERATION
+# ==========================================
+L = 20.0  # structural length in meters[cite: 1]
+angles_deg = [1, 2, 5, 10, 15, 20, 30]
+term_counts = [1, 2, 3, 4]
+
+print("=" * 80)
+print("NUMERICAL TABLES: Maclaurin Series for y = L * sin(theta)[cite: 1]")
+print("=" * 80)
+print(f"{'Angle (°)':<10} | {'Terms':<6} | {'Exact y (m)':<12} | {'Approx y (m)':<14} | {'Abs Error (m)':<14} | {'% Error':<10}")
+print("-" * 80)
+
+html_table_rows = ""
+
+for deg in angles_deg:
+    theta_rad = math.radians(deg)
+    exact_y = L * math.sin(theta_rad)
+    for N in term_counts:
+        approx_sin = sin_maclaurin(theta_rad, N)
+        approx_y = L * approx_sin
+        abs_error = abs(exact_y - approx_y)
+        pct_error = (abs_error / abs(exact_y)) * 100 if exact_y != 0 else 0.0
+        
+        print(f"{deg:<10} | {N:<6} | {exact_y:<12.5f} | {approx_y:<14.5f} | {abs_error:<14.5e} | {pct_error:<10.4f}%")
+        
+        html_table_rows += f"""
+            <tr>
+                <td>{deg}°</td>
+                <td>{N}</td>
+                <td>{exact_y:.5f}</td>
+                <td>{approx_y:.5f}</td>
+                <td>{abs_error:.5e}</td>
+                <td>{pct_error:.4f}%</td>
+            </tr>
+        """
+
+print("\n[INFO] Generating combined Visual Analytics Dashboard plot...")
+
+# Create 2x2 grid matching the reference layout style exactly
+fig, axs = plt.subplots(2, 2, figsize=(16, 10))
+fig.suptitle("Civil Engineering Series Exercise - Visual Analytics Dashboard", fontsize=16, fontweight='bold', y=0.95)
+
+# --- Subplot 1 (Top-Left): Convergence Behavior ---
+angles_to_plot = [5, 15, 30]
+max_terms = 8
+terms_range = list(range(1, max_terms + 1))
+for deg in angles_to_plot:
+    theta_rad = math.radians(deg)
+    exact_val = math.sin(theta_rad)
+    errors = [abs((exact_val - sin_maclaurin(theta_rad, N)) / exact_val) * 100 for N in terms_range]
+    axs[0, 0].plot(terms_range, errors, marker='o', label=f'Angle = {deg}°')
+
+axs[0, 0].set_yscale('log')
+axs[0, 0].set_xlabel('Number of Terms (N)')
+axs[0, 0].set_ylabel('% Error (Log Scale)')
+axs[0, 0].set_title('Convergence Behavior')
+axs[0, 0].grid(True, which="both", ls="--")
+axs[0, 0].legend()
+
+# --- Subplot 2 (Top-Right): Exact vs. Maclaurin ---
+theta_vals = [math.radians(d) for d in range(0, 36)]
+deg_vals = list(range(0, 36))
+exact_curve = [math.sin(t) for t in theta_vals]
+
+axs[0, 1].plot(deg_vals, exact_curve, 'k-', linewidth=2, label='Exact sin(theta)')
+axs[0, 1].plot(deg_vals, [sin_maclaurin(t, 2) for t in theta_vals], 'r--', label='Maclaurin (2 terms)')
+axs[0, 1].plot(deg_vals, [sin_maclaurin(t, 4) for t in theta_vals], 'b:', label='Maclaurin (4 terms)')
+axs[0, 1].set_xlabel('Angle (degrees)')
+axs[0, 1].set_ylabel('sin(theta)')
+axs[0, 1].set_title('Exact vs. Maclaurin')
+axs[0, 1].grid(True)
+axs[0, 1].legend()
+
+# --- Subplot 3 (Bottom-Left): Exact vs. Taylor (Center 10°) ---
+axs[1, 0].plot(deg_vals, exact_curve, 'k-', linewidth=2, label='Exact sin(theta)')
+axs[1, 0].plot(deg_vals, [sin_taylor(t, math.radians(10), 2) for t in theta_vals], 'g--', label='Taylor (2 terms, center 10°)')
+axs[1, 0].plot(deg_vals, [sin_taylor(t, math.radians(10), 4) for t in theta_vals], 'm:', label='Taylor (4 terms, center 10°)')
+axs[1, 0].axvline(10, color='gray', linestyle=':', label='Taylor Center (10°)')
+axs[1, 0].set_xlabel('Angle (degrees)')
+axs[1, 0].set_ylabel('sin(theta)')
+axs[1, 0].set_title('Exact vs. Taylor (Center 10°)')
+axs[1, 0].grid(True)
+axs[1, 0].legend()
+
+# --- Subplot 4 (Bottom-Right): Maclaurin vs. Taylor Error Comparison ---
+maclaurin_errors = [(abs(math.sin(t) - sin_maclaurin(t, 3)) / math.sin(t) * 100) if math.sin(t) != 0 else 0.0 for t in theta_vals]
+taylor_errors = [(abs(math.sin(t) - sin_taylor(t, math.radians(10), 3)) / math.sin(t) * 100) if math.sin(t) != 0 else 0.0 for t in theta_vals]
+
+axs[1, 1].plot(deg_vals, maclaurin_errors, 'r-', linewidth=2, label='Maclaurin (3 terms) % Error')
+axs[1, 1].plot(deg_vals, taylor_errors, 'b-', linewidth=2, label='Taylor (3 terms, center 10°) % Error')
+axs[1, 1].axvline(10, color='gray', linestyle=':', label='Expansion Center (10°)')
+axs[1, 1].set_yscale('log')
+axs[1, 1].set_xlabel('Angle (degrees)')
+axs[1, 1].set_ylabel('% Error (Log Scale)')
+axs[1, 1].set_title('Maclaurin vs. Taylor Error Comparison')
+axs[1, 1].grid(True, which="both", ls="--")
+axs[1, 1].legend()
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.93])
+
+combined_plot_path = "visual_analytics_dashboard.png"
+plt.savefig(combined_plot_path, dpi=150)
+plt.close()
+
+# ==========================================
+# HTML DASHBOARD GENERATION
+# ==========================================
+html_template = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Civil Engineering Series Exercise Dashboard</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background-color: #f4f7f6; color: #333; }}
+        h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 10px; }}
+        
+        .student-info {{ background: #eef2f7; padding: 12px 20px; border-radius: 6px; margin-bottom: 25px; font-size: 16px; border-left: 5px solid #3498db; font-weight: 500; }}
+        
+        /* Style the tab */
+        .tab {{ overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; border-radius: 8px 8px 0 0; }}
+        .tab button {{ background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 20px; transition: 0.3s; font-size: 16px; font-weight: 600; color: #2c3e50; }}
+        .tab button:hover {{ background-color: #ddd; }}
+        .tab button.active {{ background-color: #3498db; color: white; }}
+        
+        /* Style the tab content */
+        .tabcontent {{ display: none; padding: 25px; border: 1px solid #ccc; border-top: none; background: #ffffff; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
+        
+        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; background: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }}
+        th, td {{ padding: 12px 18px; text-align: center; border-bottom: 1px solid #e9ecef; }}
+        th {{ background-color: #2c3e50; color: white; font-weight: 600; text-transform: uppercase; font-size: 14px; }}
+        tr:hover {{ background-color: #f1f4f8; }}
+        
+        .plot-container {{ background: #ffffff; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; margin-top: 15px; }}
+        .plot-container img {{ max-width: 100%; height: auto; border-radius: 4px; }}
+        
+        .recommendation-box {{ background: #ffffff; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 6px solid #2980b9; border-radius: 8px; }}
+        ul {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+
+    <h1>Civil Engineering Series Analysis Dashboard</h1>
+    <div class="student-info">
+        <strong>Name:</strong> Villondo, Angel Rain L. &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Section:</strong> BSCE-3D &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Parameter:</strong> L = {L} m[cite: 1]
+    </div>
+
+    <!-- Tab Links -->
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'NumericalTable')">Numerical Table: Maclaurin Series Approximation</button>
+        <button class="tablinks" onclick="openTab(event, 'Visualizations')">Analytical Visualizations</button>
+        <button class="tablinks" onclick="openTab(event, 'Recommendation')">Final Engineering Recommendation</button>
+    </div>
+
+    <!-- Tab 1: Numerical Table -->
+    <div id="NumericalTable" class="tabcontent" style="display: block;">
+        <h2>Maclaurin Series Approximation for y = L * sin(&theta;)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Angle (&deg;)</th>
+                    <th>Terms (N)</th>
+                    <th>Exact y (m)</th>
+                    <th>Approx y (m)</th>
+                    <th>Abs Error (m)</th>
+                    <th>Percentage Error (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {table_rows}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tab 2: Analytical Visualizations -->
+    <div id="Visualizations" class="tabcontent">
+        <h2>Visual Analytics Dashboard</h2>
+        <div class="plot-container">
+            <img src="{combined_plot}" alt="Visual Analytics Dashboard">
+        </div>
+    </div>
+
+    <!-- Tab 3: Final Engineering Recommendation -->
+    <div id="Recommendation" class="tabcontent">
+        <div class="recommendation-box">
+            <h2>Final Engineering Recommendation</h2>
+            <ul>
+                <li><strong>Number of Terms Required:</strong> For small angles (< 5°), a 1-term approximation satisfies the strict < 0.1% error requirement[cite: 1]. For larger angles up to 30°, up to 4 terms are required for Maclaurin expansions[cite: 1].</li>
+                <li><strong>Percentage Error Achieved:</strong> Error stays safely below 0.1% thresholds locally, but grows rapidly for wide-angle structural sweeps unless higher-order series or shifting expansion centers are introduced[cite: 1].</li>
+                <li><strong>Convergence Behavior:</strong> Both series converge rapidly near their chosen expansion centers (0° for Maclaurin, 10° for Taylor), proving that spatial proximity to the expansion point dictates computational efficacy[cite: 1].</li>
+                <li><strong>Computational Simplicity vs. Accuracy Tradeoff:</strong> Polynomial approximations substitute complex transcendental operations with simple multiplications and additions, making them ideal for constrained microcontrollers, provided the valid range is bounded[cite: 1].</li>
+                <li><strong>Final Verdict & Valid Angle Range:</strong> For robust civil engineering calculations spanning up to 30°, shifting the Taylor center or relying on exact built-in math libraries offers the safest engineering compromise under a 0.1% tolerance constraint[cite: 1].</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {{
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {{
+                tabcontent[i].style.display = "none";
+            }}
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {{
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }}
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }}
+    </script>
+
+</body>
+</html>
+"""
+
+html_content = html_template.format(
+    L=L,
+    table_rows=html_table_rows,
+    combined_plot=combined_plot_path
+)
+
+html_filename = "engineering_dashboard.html"
+with open(html_filename, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"\n[INFO] HTML Dashboard with tabs successfully generated and saved as '{html_filename}'")
+webbrowser.open('file://' + os.path.realpath(html_filename))
