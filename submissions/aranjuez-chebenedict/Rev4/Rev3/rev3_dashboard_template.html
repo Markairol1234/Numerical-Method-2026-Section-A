@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rev3 - 3D Structural Load Dashboard</title>
+<style>
+:root{--ink:#0b2531;--muted:#5b7180;--line:#d7e3e6;--teal:#0e7c86;--dk:#0b4f6c;--bg:#f2fafa}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 'Segoe UI',Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:linear-gradient(135deg,#0e7c86,#0b4f6c);color:#fff;padding:22px 28px}
+header h1{margin:0 0 4px;font-size:26px}header .sub{opacity:.9;font-size:13px}
+main{max-width:1700px;margin:0 auto;padding:18px 18px 40px}
+section.panel{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:18px;box-shadow:0 4px 18px rgba(11,79,108,.08)}
+h2{margin:0 0 10px;color:var(--dk);font-size:18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.sc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfefe}
+.sc .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.sc .v{font-size:20px;font-weight:600;color:var(--dk)}.sc .w{font-size:12px;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button,select,input{font:inherit;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+button{cursor:pointer}button:hover{background:#effaf9}button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+label.t{display:flex;gap:4px;align-items:center;font-size:13px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1400px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.cell{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fbfefe;cursor:pointer}
+.cell.sel{outline:2px solid var(--teal)}.cell h3{margin:0;font-size:13px;color:var(--dk)}
+.cell .s{font-size:11.5px;color:var(--muted);min-height:34px}
+canvas{width:100%;display:block;background:#fff;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab}
+.cell canvas{height:300px}#big{height:620px}
+.detail{display:grid;grid-template-columns:minmax(0,3fr) minmax(260px,1fr);gap:14px}
+@media(max-width:1000px){.detail{grid-template-columns:1fr}}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;margin-top:8px}
+.legend i{display:inline-block;width:22px;height:5px;margin-right:5px;vertical-align:middle;border-radius:2px}
+.note{font-size:12px;color:var(--muted)}
+.tbar{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}.tw{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border-bottom:1px solid var(--line);padding:5px 9px;text-align:left;white-space:nowrap}
+th{background:#effaf9;color:var(--dk);font-size:11px;text-transform:uppercase;position:sticky;top:0;cursor:pointer;user-select:none}
+td.n{text-align:right;font-variant-numeric:tabular-nums}.hi{background:#fde8c8}.lo{background:#d6ebfb}
+details{border-top:1px solid var(--line);padding:8px 0}summary{cursor:pointer;font-weight:600;color:var(--dk)}
+footer{text-align:center;color:var(--muted);font-size:11.5px;padding:14px}
+</style></head><body>
+<header><h1>Rev3 - 3D Structural Load Dashboard</h1>
+<div class="sub" id="sub"></div></header>
+<main>
+<section class="panel"><h2>Overview</h2><div class="cards" id="cards"></div></section>
+
+<section class="panel"><h2>3D load-case viewer</h2>
+<div class="bar" id="tb">
+ <button data-m="grid" class="on">All 8 cases</button><button data-m="single">Single case</button><span>|</span>
+ <span>View:</span>
+ <button data-v="iso">Isometric</button><button data-v="front">Front</button><button data-v="back">Back</button><button data-v="left">Left</button><button data-v="right">Right</button><button data-v="top">Top</button><button data-v="bottom">Bottom</button>
+ <button id="reset">Reset camera</button><span>|</span>
+ <label class="t"><input type="checkbox" id="oNodes" checked>Node IDs</label>
+ <label class="t"><input type="checkbox" id="oMem">Member IDs</label>
+ <label class="t"><input type="checkbox" id="oLen">Member lengths</label>
+ <label class="t"><input type="checkbox" id="oDim" checked>Dimensions</label>
+ <label class="t"><input type="checkbox" id="oLbl" checked>Load labels</label>
+ <label class="t"><input type="checkbox" id="oFace">Face labels</label>
+ <label class="t"><input type="checkbox" id="oLink" checked>Link cameras</label>
+</div>
+<div class="note">Drag = rotate &middot; Shift+drag / right-drag = pan &middot; wheel = zoom. Member thickness is schematic (not to scale); load-arrow length is a fixed schematic length - the label gives the magnitude.</div>
+<div id="gridView"><div class="grid" id="grid"></div></div>
+<div id="singleView" style="display:none"><div class="bar"><span>Case:</span><select id="caseSel"></select></div>
+ <div class="detail"><canvas id="big"></canvas><div id="info"></div></div></div>
+<div class="legend" id="legend"></div>
+</section>
+
+<section class="panel"><h2>Load-case comparison</h2>
+<div class="note" id="cmpNote"></div><div id="tComp"></div></section>
+
+<section class="panel"><h2>Data tables</h2>
+<details open><summary>Load combinations (NSCP 2015)</summary><div id="tCombo"></div></details>
+<details><summary>Applied loads (per load, global components)</summary><div id="tLoads"></div></details>
+<details><summary>Equivalent nodal loads per case (assembled vector, global)</summary><div id="tEquiv"></div></details>
+<details><summary>Nodes and supports</summary><div id="tNodes"></div></details>
+<details><summary>Members</summary><div id="tMem"></div></details>
+<details><summary>Material and section properties</summary><div id="tProps"></div></details>
+</section>
+</main>
+<footer>Generated __GENERATED__ by Rev3 - every value comes from the Rev3 model; nothing is computed on this page except display formatting.
+Reactions, member forces and displacements are not computed by Rev3 (Rev4 scope) and are not shown.</footer>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const DATA=(typeof __DATA__!=='undefined')?__DATA__:JSON.parse(document.getElementById('data').textContent);
+const U=DATA.units,rad=Math.PI/180;
+const CAT={Dead:'#8b4513',Live:'#2e8b57',Wind:'#1e90ff',Seismic:'#dc143c','Member Point Load':'#9400d3'};
+const PRE={iso:[-35,25],front:[0,0],back:[180,0],left:[90,0],right:[-90,0],top:[0,90],bottom:[0,-90]};
+const N={};DATA.nodes.forEach(n=>N[n.id]=n);const P=n=>[n.x,n.y,n.z];
+const mn=[0,1,2].map(i=>Math.min(...DATA.nodes.map(n=>P(n)[i]))),mx=[0,1,2].map(i=>Math.max(...DATA.nodes.map(n=>P(n)[i])));
+const C=mn.map((v,i)=>(v+mx[i])/2),SPAN=Math.max(...mx.map((v,i)=>v-mn[i]));
+const newCam=()=>({az:PRE.iso[0],el:PRE.iso[1],zoom:1,px:0,py:0});
+function proj(cam,W,H,p){const x=p[0]-C[0],y=p[1]-C[1],z=p[2]-C[2];
+ const ca=Math.cos(cam.az*rad),sa=Math.sin(cam.az*rad),ce=Math.cos(cam.el*rad),se=Math.sin(cam.el*rad);
+ const x1=x*ca-z*sa,z1=x*sa+z*ca,y2=y*ce+z1*se,d=-y*se+z1*ce,s=cam.zoom*Math.min(W,H)/(SPAN*2.3);
+ return [W/2+cam.px+x1*s,H/2+cam.py-y2*s,d,s];}
+const add=(a,b,k=1)=>a.map((v,i)=>v+b[i]*k),unit=v=>{const m=Math.hypot(...v)||1;return v.map(a=>a/m)};
+function arrowsFor(lc){const out=[],L=SPAN*0.22,col=CAT[lc.category]||'#333';
+ lc.arrows.forEach(a=>{const u=unit(a.vec);
+  if(a.kind==='dist'){[.2,.35,.5,.65,.8].forEach(f=>{const h=add(a.p0,add(a.p1,a.p0,-1),f);
+    out.push({head:h,tail:add(h,u,-L*.7),col,label:f===.5?a.label:null});});}
+  else out.push({head:a.pos,tail:add(a.pos,u,-L),col,label:a.label});});return out;}
+function head2(ctx,from,to,sz,col){const a=Math.atan2(to[1]-from[1],to[0]-from[0]);ctx.fillStyle=col;ctx.beginPath();
+ ctx.moveTo(to[0],to[1]);ctx.lineTo(to[0]-sz*Math.cos(a-.4),to[1]-sz*Math.sin(a-.4));ctx.lineTo(to[0]-sz*Math.cos(a+.4),to[1]-sz*Math.sin(a+.4));ctx.closePath();ctx.fill();}
+function pill(ctx,txt,x,y,col,al,placed){ctx.font='11px Segoe UI,Arial';const w=ctx.measureText(txt).width+6,h=14;
+ let bx=al==='right'?x-w:al==='center'?x-w/2:x,by=y-h/2;
+ if(placed){for(const dy of [0,15,-15,30,-30]){const r=[bx,by+dy,w,h];if(!placed.some(q=>r[0]<q[0]+q[2]&&q[0]<r[0]+r[2]&&r[1]<q[1]+q[3]&&q[1]<r[1]+r[3])){by+=dy;break;}}
+  placed.push([bx,by,w,h]);}
+ ctx.fillStyle='rgba(255,255,255,.88)';ctx.fillRect(bx,by,w,h);ctx.fillStyle=col;ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillText(txt,bx+3,by+h/2);}
+function dimLine(ctx,pr,a,b,off,txt,placed){const a2=add(a,off),b2=add(b,off),A=pr(a),B=pr(b),A2=pr(a2),B2=pr(b2);
+ ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(A2[0],A2[1]);ctx.moveTo(B[0],B[1]);ctx.lineTo(B2[0],B2[1]);ctx.stroke();ctx.setLineDash([]);
+ ctx.beginPath();ctx.moveTo(A2[0],A2[1]);ctx.lineTo(B2[0],B2[1]);ctx.stroke();head2(ctx,B2,A2,8,'#555');head2(ctx,A2,B2,8,'#555');
+ pill(ctx,txt,(A2[0]+B2[0])/2,(A2[1]+B2[1])/2,'#222','center',placed);}
+const f3=v=>(+v).toFixed(3);
+function render(ctx,W,H,cam,lc,o){ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+ const pr=p=>proj(cam,W,H,p),items=[],placed=[];
+ const rp=DATA.roof.map(i=>pr(P(N[i])));ctx.fillStyle='rgba(148,112,219,.10)';ctx.beginPath();rp.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();ctx.fill();
+ const wd=Math.max(4,.2*pr(C)[3]);
+ DATA.members.forEach(m=>{const a=pr(P(N[m.i])),b=pr(P(N[m.j])),col=m.type==='Column'?['#ff9a1f','#8a4b00']:['#4682b4','#16324d'];
+  items.push({d:(a[2]+b[2])/2,f:()=>{ctx.lineCap='round';ctx.strokeStyle=col[1];ctx.lineWidth=wd+2.5;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+   ctx.strokeStyle=col[0];ctx.lineWidth=wd;ctx.stroke();}});});
+ const ar=arrowsFor(lc),lbls=[];
+ ar.forEach(a=>{const h=pr(a.head),t=pr(a.tail);items.push({d:(h[2]+t[2])/2-.01,f:()=>{
+   const len=Math.hypot(h[0]-t[0],h[1]-t[1]);ctx.strokeStyle=a.col;ctx.lineWidth=2.5;ctx.lineCap='butt';
+   if(len<8){ctx.beginPath();ctx.arc(h[0],h[1],7,0,6.283);ctx.stroke();ctx.fillStyle=a.col;ctx.beginPath();ctx.arc(h[0],h[1],2.5,0,6.283);ctx.fill();}
+   else{ctx.beginPath();ctx.moveTo(t[0],t[1]);ctx.lineTo(h[0]-(h[0]-t[0])/len*8,h[1]-(h[1]-t[1])/len*8);ctx.stroke();head2(ctx,t,h,11,a.col);}}});
+  if(a.label)lbls.push({a,h,t});});
+ DATA.nodes.forEach(n=>{const q=pr(P(n));items.push({d:q[2]-.02,f:()=>{if(n.is_support){ctx.fillStyle='#000';ctx.beginPath();ctx.moveTo(q[0],q[1]+3);ctx.lineTo(q[0]-9,q[1]+18);ctx.lineTo(q[0]+9,q[1]+18);ctx.closePath();ctx.fill();}
+  ctx.fillStyle='#e11';ctx.beginPath();ctx.arc(q[0],q[1],4,0,6.283);ctx.fill();}});});
+ items.sort((a,b)=>b.d-a.d).forEach(i=>i.f());
+ if(o.dim){const d=SPAN*.2,D=DATA.dims,t=x=>f3(x)+' '+U.length;
+  dimLine(ctx,pr,[mn[0],mn[1],mn[2]],[mx[0],mn[1],mn[2]],[0,-d,-d],'X = '+t(D[0]),placed);
+  dimLine(ctx,pr,[mx[0],mn[1],mn[2]],[mx[0],mn[1],mx[2]],[d,-d,0],'Z = '+t(D[2]),placed);
+  dimLine(ctx,pr,[mn[0],mn[1],mn[2]],[mn[0],mx[1],mn[2]],[-d,0,-d],'Y = '+t(D[1]),placed);}
+ if(o.nodes)DATA.nodes.forEach(n=>{const q=pr(P(n));pill(ctx,'N'+n.id,q[0]+7,q[1]-10,'#000','left',placed);});
+ DATA.members.forEach(m=>{const a=pr(P(N[m.i])),b=pr(P(N[m.j])),x=(a[0]+b[0])/2,y=(a[1]+b[1])/2;
+  const tx=(o.mem?'M'+m.id:'')+(o.mem&&o.len?'  ':'')+(o.len?f3(m.length)+' '+U.length:'');if(tx)pill(ctx,tx,x,y+(o.dim?0:0),'#0b4f6c','center',placed);});
+ if(o.face){const mid=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2],e=.05*SPAN;
+  [['FRONT (Z min)',[mid[0],mid[1],mn[2]-e]],['BACK (Z max)',[mid[0],mid[1],mx[2]+e]],['LEFT (X min)',[mn[0]-e,mid[1],mid[2]]],['RIGHT (X max)',[mx[0]+e,mid[1],mid[2]]],['TOP (Y max)',[mid[0],mx[1]+e,mid[2]]],['BOTTOM (Y min)',[mid[0],mn[1]-e,mid[2]]]]
+  .forEach(([t,p])=>{const q=pr(p);pill(ctx,t,q[0],q[1],'#666','center',placed);});}
+ if(o.lbl)lbls.forEach(({a,h,t})=>{const len=Math.hypot(h[0]-t[0],h[1]-t[1]);let dx=len<8?1:(t[0]-h[0])/len,dy=len<8?0:(t[1]-h[1])/len;
+  pill(ctx,a.label,t[0]+dx*8,t[1]+dy*8,a.col,dx>=0?'left':'right',placed);});
+ const g=[30,H-34];[['X',[1,0,0],'#c00'],['Y',[0,1,0],'#080'],['Z',[0,0,1],'#00c']].forEach(([n,v,c])=>{const a=pr(C),b=pr(add(C,v,SPAN)),l=Math.hypot(b[0]-a[0],b[1]-a[1])||1,
+  e=[g[0]+(b[0]-a[0])/SPAN*0+ (b[0]-a[0])/l*Math.min(24,l),g[1]+(b[1]-a[1])/l*Math.min(24,l)];ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(g[0],g[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();
+  head2(ctx,g,e,6,c);ctx.fillStyle=c;ctx.font='bold 11px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n,g[0]+(e[0]-g[0])*1.3,g[1]+(e[1]-g[1])*1.3);});
+ return {arrows:ar.length};}
+function csvOf(cols,rows){const q=v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+ return [cols.map(c=>q(c.h)).join(',')].concat(rows.map(r=>cols.map(c=>q(r[c.k]===undefined?'':r[c.k])).join(','))).join('\r\n');}
+if(typeof module!=='undefined')module.exports={DATA,proj,arrowsFor,render,csvOf,newCam,PRE,CAT};
+if(typeof document!=='undefined'&&typeof window!=='undefined'){(function(){
+const $=s=>document.querySelector(s),opt=()=>({nodes:$('#oNodes').checked,mem:$('#oMem').checked,len:$('#oLen').checked,dim:$('#oDim').checked,lbl:$('#oLbl').checked,face:$('#oFace').checked});
+$('#sub').textContent=`${DATA.dims.map(f3).join(' x ')} ${U.length} cube frame - units: ${U.system} - generated __GENERATED__`;
+const c=DATA.counts;[['Nodes',c.nodes,''],['Members',c.members,`${c.beams} beams, ${c.columns} columns`],['Supports',c.supports,'restrained nodes (see Nodes table)'],
+ ['Overall size',DATA.dims.map(f3).join(' x '),`X x Y x Z (${U.length})`],['Load cases',c.cases,''],['Load combinations',c.combos,'LRFD + ASD']]
+ .concat(DATA.gov.map(g=>[g.label,f3(g.value),g.who])).forEach(([k,v,w])=>$('#cards').insertAdjacentHTML('beforeend',`<div class="sc"><div class="k">${k}</div><div class="v">${v}</div><div class="w">${w}</div></div>`));
+const views=[];let mode='grid',sel=DATA.cases[0].id;
+function mk(cv,lc){const v={cv,lc,cam:newCam()};views.push(v);let drag=null;
+ cv.addEventListener('contextmenu',e=>e.preventDefault());
+ cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button!==0};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';});
+ cv.addEventListener('pointerup',()=>{drag=null;cv.style.cursor='grab';});
+ cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
+  cams(v,k=>{if(drag.pan){k.px+=dx;k.py+=dy;}else{k.az+=dx*.5;k.el=Math.max(-90,Math.min(90,k.el+dy*.5));}});});
+ cv.addEventListener('wheel',e=>{e.preventDefault();cams(v,k=>{k.zoom=Math.max(.3,Math.min(8,k.zoom*(e.deltaY<0?1.1:1/1.1)));});},{passive:false});return v;}
+function cams(v,fn){views.filter(w=>$('#oLink').checked||w===v).forEach(w=>fn(w.cam));redraw();}
+function draw(v){const cv=v.cv;if(!cv.clientWidth)return;const d=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+ if(cv.width!==W*d||cv.height!==H*d){cv.width=W*d;cv.height=H*d;}const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);render(x,W,H,v.cam,v.lc,opt());}
+function redraw(){views.forEach(v=>{if(v.cv.offsetParent!==null)draw(v);});}
+const grid=$('#grid');DATA.cases.forEach(lc=>{const el=document.createElement('div');el.className='cell';el.dataset.id=lc.id;
+ const t=lc.tot.map(f3).join(', ');el.innerHTML=`<h3>LC${lc.id} - ${lc.name}</h3><div class="s">${lc.summary}<br>Sum F [Fx, Fy, Fz] = [${t}] ${U.force}</div><canvas></canvas>`;
+ grid.appendChild(el);mk(el.querySelector('canvas'),lc);el.addEventListener('click',()=>{sel=lc.id;mark();});});
+const big=mk($('#big'),DATA.cases[0]);
+DATA.cases.forEach(lc=>$('#caseSel').insertAdjacentHTML('beforeend',`<option value="${lc.id}">LC${lc.id} - ${lc.name}</option>`));
+function mark(){document.querySelectorAll('.cell').forEach(e=>e.classList.toggle('sel',+e.dataset.id===sel));$('#caseSel').value=sel;
+ const lc=DATA.cases.find(l=>l.id===sel);big.lc=lc;const rows=DATA.loads.filter(l=>l.case===sel);
+ $('#info').innerHTML=`<h2>LC${lc.id} - ${lc.name}</h2><p class="note">${lc.summary}</p><p>Sum F = [${lc.tot.map(f3).join(', ')}] ${U.force}</p><b>Applied loads (${rows.length})</b><table><tr><th>Kind</th><th>Target</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Unit</th></tr>${rows.map(r=>`<tr><td>${r.kind}</td><td>${r.target}${r.a!==''?' @a='+r.a:''}</td><td class="n">${f3(r.fx)}</td><td class="n">${f3(r.fy)}</td><td class="n">${f3(r.fz)}</td><td>${r.unit}</td></tr>`).join('')}</table>`;redraw();}
+function setMode(m){mode=m;$('#gridView').style.display=m==='grid'?'':'none';$('#singleView').style.display=m==='single'?'':'none';
+ document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===m));mark();}
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('#caseSel').onchange=e=>{sel=+e.target.value;mark();};
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const p=PRE[b.dataset.v];cams(big,k=>{k.az=p[0];k.el=p[1];k.px=k.py=0;});});
+$('#reset').onclick=()=>{views.forEach(v=>Object.assign(v.cam,newCam()));redraw();};
+['oNodes','oMem','oLen','oDim','oLbl','oFace'].forEach(i=>$('#'+i).onchange=redraw);window.addEventListener('resize',redraw);
+$('#legend').innerHTML=[['#4682b4','Beam'],['#ff9a1f','Column'],['#8b4513','Dead load'],['#2e8b57','Live load'],['#9400d3','Member point load'],['#1e90ff','Wind load'],['#dc143c','Seismic load']]
+ .map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')+'<span>&#9650; Pinned support (base nodes)</span><span style="color:#9470db">&#9632; Rigid roof diaphragm</span><span>Red dot = node</span><span>Axes gizmo: X red, Y green, Z blue</span><span>Arrow head = point of application; label sits at the tail</span>';
+function mkTable(id,cols,rows,o={}){const root=$(id);let sk=null,dir=1,q='',cs='';
+ root.innerHTML=`<div class="tbar"><input placeholder="Filter..."><${o.cases?'select><option value="">All cases</option>'+DATA.cases.map(l=>`<option value="${l.id}">LC${l.id}</option>`).join('')+'</select':'span></span'}><button>Export CSV</button><span class="note"></span></div><div class="tw"><table><thead><tr></tr></thead><tbody></tbody></table></div>`;
+ const th=root.querySelector('tr'),tb=root.querySelector('tbody'),cnt=root.querySelector('.note');
+ cols.forEach(c=>{const h=document.createElement('th');h.textContent=c.h;h.onclick=()=>{dir=sk===c.k?-dir:1;sk=c.k;go();};th.appendChild(h);});
+ const hl={};(o.hl||[]).forEach(k=>{const v=rows.map(r=>r[k]);hl[k]=[Math.max(...v),Math.min(...v)];});
+ function view(){let r=rows.filter(x=>(!cs||String(x.case)===cs)&&(!q||cols.some(c=>String(x[c.k]).toLowerCase().includes(q))));
+  if(sk)r=r.slice().sort((a,b)=>(typeof a[sk]==='number'?a[sk]-b[sk]:String(a[sk]).localeCompare(String(b[sk])))*dir);return r;}
+ function go(){const r=view();tb.innerHTML=r.map(x=>'<tr>'+cols.map(c=>{const v=x[c.k],n=typeof v==='number';
+  const cl=(n?'n ':'')+(hl[c.k]&&v===hl[c.k][0]?'hi ':'')+(hl[c.k]&&v===hl[c.k][1]?'lo':'');return `<td class="${cl}">${n?v.toFixed(c.d===undefined?3:c.d):v}</td>`;}).join('')+'</tr>').join('');cnt.textContent=r.length+' / '+rows.length+' rows';}
+ root.querySelector('input').oninput=e=>{q=e.target.value.toLowerCase();go();};
+ const s=root.querySelector('select');if(s)s.onchange=e=>{cs=e.target.value;go();};
+ root.querySelector('button').onclick=()=>{const b=new Blob([csvOf(cols,view())],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=id.slice(2).toLowerCase()+'.csv';a.click();};go();}
+const F=U.force,Lx=U.length,Mx=U.moment;
+mkTable('#tComp',[{k:'case',h:'LC',d:0},{k:'name',h:'Load case'},{k:'category',h:'Category'},{k:'sfx',h:`Sum Fx [${F}]`},{k:'sfy',h:`Sum Fy [${F}]`},{k:'sfz',h:`Sum Fz [${F}]`},{k:'res',h:`|Sum F| [${F}]`},{k:'maxf',h:`Max equiv. nodal force [${F}]`},{k:'maxm',h:`Max equiv. nodal moment [${Mx}]`},{k:'err',h:'Equilibrium error [N]',d:9}],DATA.comp,{hl:['sfx','sfy','sfz','res','maxf','maxm']});
+$('#cmpNote').textContent=`Orange = maximum, blue = minimum of each column (signed values). Signs: +X, +Y (up), +Z positive; gravity acts in -Y. Sums are the resultant applied forces per case (self-weight included in LC1). Governing |Sum F| case: LC${DATA.comp.reduce((a,b)=>b.res>a.res?b:a).case}.`;
+mkTable('#tCombo',[{k:'id',h:'ID',d:0},{k:'method',h:'Method'},{k:'name',h:'Combination'},{k:'factors',h:'Case factors'},{k:'fx',h:`Sum Fx [${F}]`},{k:'fy',h:`Sum Fy [${F}]`},{k:'fz',h:`Sum Fz [${F}]`},{k:'err',h:'Equilibrium error [N]',d:9}],DATA.combos,{hl:['fx','fy','fz']});
+mkTable('#tLoads',[{k:'case',h:'LC',d:0},{k:'kind',h:'Kind'},{k:'target',h:'Applied to'},{k:'a',h:'Location a (0-1)'},{k:'fx',h:'Fx'},{k:'fy',h:'Fy'},{k:'fz',h:'Fz'},{k:'unit',h:'Unit'}],DATA.loads,{cases:true});
+mkTable('#tEquiv',[{k:'case',h:'LC',d:0},{k:'node',h:'Node',d:0},{k:'fx',h:`Fx [${F}]`},{k:'fy',h:`Fy [${F}]`},{k:'fz',h:`Fz [${F}]`},{k:'mx',h:`Rx [${Mx}]`},{k:'my',h:`Ry [${Mx}]`},{k:'mz',h:`Rz [${Mx}]`}],DATA.equiv,{cases:true});
+mkTable('#tNodes',[{k:'id',h:'Node',d:0},{k:'x',h:`X [${Lx}]`},{k:'y',h:`Y [${Lx}]`},{k:'z',h:`Z [${Lx}]`},{k:'support',h:'Support'}],DATA.nodes);
+mkTable('#tMem',[{k:'id',h:'Member',d:0},{k:'type',h:'Type'},{k:'i',h:'Node i',d:0},{k:'j',h:'Node j',d:0},{k:'length',h:`Length [${Lx}]`}],DATA.members);
+mkTable('#tProps',[{k:'group',h:'Group'},{k:'prop',h:'Property'},{k:'value',h:'Value (SI as stored)',d:9}],DATA.props);
+setMode('grid');})();}
+</script></body></html>

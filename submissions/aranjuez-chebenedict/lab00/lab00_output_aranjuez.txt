@@ -1,0 +1,10 @@
+Python     : 3.14.8
+NumPy      : 2.5.3
+SciPy      : 1.18.1
+Matplotlib : 3.11.2
+
+mean of sin(x) over one period : 0.0
+integral of sin(x) from 0 to pi : 2.0 (exact value 2)
+
+figure written to figures/lab00_check.png
+PLATFORM READY.

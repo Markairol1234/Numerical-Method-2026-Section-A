@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Series 1 - Laboratory Exercise Dashboard</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --accent:#38bdf8; --accent2:#a78bfa;
+    --text:#e2e8f0; --muted:#94a3b8; --good:#4ade80; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;
+       background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+       color:var(--text);line-height:1.6;}
+  header{padding:2.5rem 1.5rem;text-align:center;
+         background:linear-gradient(135deg,#1e40af 0%,#7c3aed 100%);}
+  header h1{margin:0;font-size:2.2rem;letter-spacing:.5px;}
+  header p{margin:.5rem auto 0;max-width:760px;color:#e0e7ff;}
+  .badge{display:inline-block;background:rgba(255,255,255,.15);
+         padding:.2rem .8rem;border-radius:999px;font-size:.8rem;margin-top:.8rem;}
+  main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  section{background:var(--card);border:1px solid #334155;border-radius:16px;
+          padding:1.6rem 1.8rem;margin-bottom:2rem;
+          box-shadow:0 10px 30px rgba(0,0,0,.25);}
+  h2{color:var(--accent);margin-top:0;border-bottom:1px solid #334155;
+     padding-bottom:.5rem;}
+  h3{color:var(--accent2);}
+  .formula{background:#0b1220;border:1px solid #334155;border-left:4px solid var(--accent);
+           border-radius:8px;padding:.8rem 1rem;margin:1rem 0;
+           font-family:'Cambria Math','Times New Roman',serif;font-size:1.15rem;overflow-x:auto;}
+  img{width:100%;height:auto;border-radius:10px;border:1px solid #334155;margin:1rem 0;}
+  table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.92rem;}
+  th,td{border:1px solid #334155;padding:.5rem .7rem;text-align:right;}
+  th{background:#273449;color:var(--accent);}
+  td:first-child,th:first-child{text-align:left;}
+  tr:nth-child(even){background:#1a2436;}
+  .note{background:#132a1a;border-left:4px solid var(--good);border-radius:8px;
+        padding:.8rem 1rem;margin:1rem 0;font-size:.92rem;}
+  .warn{background:#2a2413;border-left:4px solid var(--warn);border-radius:8px;
+        padding:.8rem 1rem;margin:1rem 0;font-size:.92rem;}
+  .takeaway{border-left:4px solid var(--accent2);background:#241b3a;
+            padding:.8rem 1rem;border-radius:8px;margin:1rem 0;}
+  code{background:#0b1220;padding:.15rem .4rem;border-radius:5px;color:#7dd3fc;font-size:.9em;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;}
+  .stat{background:#0b1220;border:1px solid #334155;border-radius:10px;padding:1rem;text-align:center;}
+  .stat b{display:block;font-size:1.5rem;color:var(--accent);}
+  footer{text-align:center;color:var(--muted);padding:1.5rem;font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Laboratory Exercise &mdash; Series 1</h1>
+  <p>Numerical exploration of Euler's number <b>e</b> through three classic
+     limits: the compound-interest limit, the derivative of the exponential as a
+     difference quotient, and the exponential (Taylor) series.</p>
+  <span class="badge">Python &bull; Matplotlib &bull; numerically-stable math</span>
+</header>
+
+<main>
+
+  <!-- ================= OVERVIEW ================= -->
+  <section>
+    <h2>Overview</h2>
+    <p>All three exercises approach the same constant,
+       <b>e = 2.718281828459045&hellip;</b>, but from three different directions
+       &mdash; a limit of a power, a limit of a difference quotient, and an infinite
+       series. Comparing them reveals <i>how fast</i> each route converges and
+       where floating-point precision becomes the limiting factor.</p>
+    <div class="grid">
+      <div class="stat"><b>2.718281828&hellip;</b>the target e</div>
+      <div class="stat"><b>&asymp; e/(2n)</b>Ex.1 error rate (1/n)</div>
+      <div class="stat"><b>O(h)</b>Ex.2 truncation error</div>
+      <div class="stat"><b>~20 terms</b>Ex.3 to hit machine precision</div>
+    </div>
+  </section>
+
+  <!-- ================= EXERCISE 1 ================= -->
+  <section>
+    <h2>Exercise 1 &mdash; Convergence of (1 + 1/n)<sup>n</sup> to e</h2>
+    <p><b>Task:</b> Implement <code>(1 + 1/n)<sup>n</sup></code> up to the
+       nanosecond and draw a histogram.</p>
+    <div class="formula">lim<sub>n&rarr;&infin;</sub> ( 1 + 1/n )<sup>n</sup> = e = 2.718281828&hellip;</div>
+
+    <h3>Concept</h3>
+    <p>If you invest at a 100&nbsp;% annual rate and compound <code>n</code>
+       times per year, the growth factor after one year is
+       <code>(1 + 1/n)<sup>n</sup></code>. Compounding more often always yields
+       more, but the increase shrinks each time, converging to <code>e</code>.
+       Going from <i>yearly</i> (n=1 &rarr; 2.0) to <i>daily</i> (n=365 &rarr;
+       2.7146) already captures three decimals; by <i>every second</i> it is
+       stable to seven decimals.</p>
+
+    <h3>Result histogram</h3>
+    <img src="exercise1_output.png" alt="Exercise 1 output">
+
+    <h3>Computed table</h3>
+    <table>
+      <tr><th>How often</th><th>n</th><th>(1 + 1/n)<sup>n</sup></th><th>|error|</th></tr>
+      <tr><td>yearly</td><td>1</td><td>2.000000</td><td>7.18e-01</td></tr>
+      <tr><td>twice a year</td><td>2</td><td>2.250000</td><td>4.68e-01</td></tr>
+      <tr><td>quarterly</td><td>4</td><td>2.441406</td><td>2.77e-01</td></tr>
+      <tr><td>monthly</td><td>12</td><td>2.613035</td><td>1.05e-01</td></tr>
+      <tr><td>weekly</td><td>52</td><td>2.692597</td><td>2.57e-02</td></tr>
+      <tr><td>daily</td><td>365</td><td>2.714567</td><td>3.71e-03</td></tr>
+      <tr><td>hourly</td><td>8760</td><td>2.718127</td><td>1.55e-04</td></tr>
+      <tr><td>every minute</td><td>525600</td><td>2.718279</td><td>2.59e-06</td></tr>
+      <tr><td>every second</td><td>31536000</td><td>2.718282</td><td>4.31e-08</td></tr>
+      <tr><td>every millisecond</td><td>3.15e10</td><td>2.718282</td><td>4.31e-11</td></tr>
+      <tr><td>every microsecond</td><td>3.15e13</td><td>2.718282</td><td>4.35e-14</td></tr>
+      <tr><td>every nanosecond</td><td>3.15e16</td><td>2.718282</td><td>0.00e+00</td></tr>
+    </table>
+
+    <div class="takeaway"><b>Explanation of the result:</b>
+      The left panel shows the value rising and flattening onto the dashed line
+      <code>e</code>. The right panel plots the absolute error on a log scale; it
+      falls as a straight line with slope &minus;1, i.e. the error is
+      proportional to <code>1/n</code> (more precisely <code>&asymp; e/(2n)</code>).
+      Doubling the compounding frequency roughly halves the error.</div>
+
+    <div class="warn"><b>Numerical caveat:</b> For n &ge; 10<sup>16</sup> the naive
+      <code>(1 + 1/n)</code> rounds to exactly <code>1.0</code> in double
+      precision, so <code>(1 + 1/n)<sup>n</sup></code> would wrongly return
+      <code>1.0</code>. The script uses the stable form
+      <code>exp(n &middot; log1p(1/n))</code>, which stays correct all the way to
+      the nanosecond.</div>
+  </section>
+
+  <!-- ================= EXERCISE 2 ================= -->
+  <section>
+    <h2>Exercise 2 &mdash; Difference quotient (a<sup>h</sup> &minus; 1)/h &rarr; ln(a)</h2>
+    <p><b>Task:</b> Implement the table for three bases as the step <code>h</code>
+       shrinks, then draw a histogram.</p>
+    <div class="formula">lim<sub>h&rarr;0</sub> ( a<sup>h</sup> &minus; 1 ) / h = ln(a)</div>
+
+    <h3>Concept</h3>
+    <p>This is the very definition of the derivative of <code>a<sup>x</sup></code>
+       evaluated at <code>x = 0</code>:
+       <code>d/dx [a<sup>x</sup>] at x=0 = ln(a)</code>. The difference quotient is
+       a finite-step <i>estimate</i> of that derivative. As <code>h</code>
+       shrinks, the estimate for each base settles onto its natural logarithm.</p>
+
+    <h3>Result histogram</h3>
+    <img src="exercise2_output.png" alt="Exercise 2 output">
+
+    <h3>Computed table (rounded)</h3>
+    <table>
+      <tr><th>h</th><th>a = 2</th><th>a = e</th><th>a = 3</th></tr>
+      <tr><td>0.1</td><td>0.7177</td><td>1.0517</td><td>1.1612</td></tr>
+      <tr><td>0.01</td><td>0.6956</td><td>1.0050</td><td>1.1047</td></tr>
+      <tr><td>0.001</td><td>0.6934</td><td>1.0005</td><td>1.0992</td></tr>
+      <tr><td>0.0001</td><td>0.6932</td><td>1.00005</td><td>1.0987</td></tr>
+      <tr><td>1e-05</td><td>0.6931</td><td>1.0000</td><td>1.0986</td></tr>
+      <tr><td>1e-06</td><td>0.6931</td><td>1.0000</td><td>1.0986</td></tr>
+      <tr><td>1e-07</td><td>0.6931</td><td>1.0000</td><td>1.0986</td></tr>
+      <tr><td><b>settles at</b></td><td><b>0.6931</b></td><td><b>1.0000</b></td><td><b>1.0986</b></td></tr>
+    </table>
+
+    <div class="takeaway"><b>Explanation of the result:</b>
+      The three coloured bar-groups (blue a=2, green a=e, red a=3) each converge
+      to their dashed reference line: ln(2)=0.6931, ln(e)=1.0000,
+      ln(3)=1.0986. Notice the biggest correction happens in the very first step
+      (h = 0.1) &mdash; the truncation error of a forward difference is
+      <code>O(h)</code>, so each 10&times; reduction in <code>h</code> removes
+      about one decimal digit of error.</div>
+
+    <div class="note"><b>Special case a = e:</b> When the base is <code>e</code>
+      itself, the limit equals exactly <code>1</code> &mdash; the unique base
+      whose exponential passes through slope 1 at the origin. This is why
+      <code>e</code> is the "natural" base of the logarithm.</div>
+
+    <div class="warn"><b>Numerical caveat:</b> For tiny <code>h</code>,
+      <code>a<sup>h</sup></code> is almost 1, so <code>a<sup>h</sup> &minus; 1</code>
+      suffers catastrophic cancellation. The script uses
+      <code>expm1(h &middot; ln(a))/h</code>, exploiting the identity
+      <code>a<sup>h</sup> &minus; 1 = e<sup>h ln a</sup> &minus; 1</code>, which
+      keeps full accuracy down to h = 1e-7.</div>
+  </section>
+
+  <!-- ================= EXERCISE 3 ================= -->
+  <section>
+    <h2>Exercise 3 &mdash; The exponential series e<sup>x</sup> = &sum; x<sup>n</sup>/n!</h2>
+    <p><b>Task:</b> Implement the series for <code>x = 1</code>, summed up to
+       <code>N = 10,000</code> terms, then draw a histogram.</p>
+    <div class="formula">e<sup>x</sup> = &sum;<sub>n=0</sub><sup>&infin;</sup> x<sup>n</sup> / n!
+      = 1 + x + x&sup2;/2! + x&sup3;/3! + &hellip;</div>
+
+    <h3>Concept</h3>
+    <p>This is the Maclaurin (Taylor) series of the exponential. For
+       <code>x = 1</code> it becomes the celebrated series for <code>e</code>.
+       The terms <code>1/n!</code> collapse to zero extremely fast because the
+       factorial grows faster than any exponential, so the partial sums converge
+       <i>super-linearly</i> &mdash; far faster than the 1/n rate of Exercise 1.</p>
+
+    <h3>Result histogram</h3>
+    <img src="exercise3_output.png" alt="Exercise 3 output">
+
+    <h3>Computed table</h3>
+    <table>
+      <tr><th>N (terms)</th><th>S<sub>N</sub></th><th>|S<sub>N</sub> &minus; e|</th><th>correct digits</th></tr>
+      <tr><td>1</td><td>2.000000000000000</td><td>7.18e-01</td><td>0.1</td></tr>
+      <tr><td>2</td><td>2.500000000000000</td><td>2.18e-01</td><td>0.7</td></tr>
+      <tr><td>3</td><td>2.666666666666667</td><td>5.16e-02</td><td>1.3</td></tr>
+      <tr><td>5</td><td>2.716666666666666</td><td>1.62e-03</td><td>2.8</td></tr>
+      <tr><td>10</td><td>2.718281801146385</td><td>2.73e-08</td><td>7.6</td></tr>
+      <tr><td>15</td><td>2.718281828458995</td><td>5.02e-14</td><td>13.3</td></tr>
+      <tr><td>20</td><td>2.718281828459046</td><td>4.44e-16</td><td>15.4</td></tr>
+      <tr><td>&ge; 20 &hellip; 10000</td><td>2.718281828459046</td><td>4.44e-16</td><td>15.4</td></tr>
+    </table>
+
+    <div class="takeaway"><b>Explanation of the result:</b>
+      The left histogram shows S<sub>N</sub> leaping from 2.0 to essentially
+      <code>e</code> within the first ~20 terms. The right log-log plot shows the
+      error diving vertically (super-linear convergence): ~8 digits correct by
+      N = 10, ~13 by N = 15, and full double-precision (&asymp;15&ndash;16 digits)
+      by N &asymp; 20. Beyond that the error is frozen at the machine-precision
+      floor of 4.44e-16.</div>
+
+    <div class="warn"><b>Why the error flattens:</b> Once a term <code>1/n!</code>
+      becomes smaller than machine epsilon (&asymp;2.2e-16), adding it to the
+      running sum changes nothing &mdash; the computer cannot represent the
+      difference. So summing to N = 10,000 gives the identical result as
+      N = 20; the remaining ~9,980 terms are numerically invisible.</div>
+  </section>
+
+  <!-- ================= COMPARISON ================= -->
+  <section>
+    <h2>Comparing the Three Routes</h2>
+    <table>
+      <tr><th>Method</th><th>Convergence rate</th><th>Terms / periods for ~15 digits</th><th>Limiting factor</th></tr>
+      <tr><td>Ex.1 (1+1/n)<sup>n</sup></td><td>O(1/n)</td><td>&asymp; 10<sup>15</sup></td><td>very slow; needs huge n</td></tr>
+      <tr><td>Ex.2 (a<sup>h</sup>&minus;1)/h</td><td>O(h) per decade</td><td>h &asymp; 1e-15</td><td>truncation + cancellation</td></tr>
+      <tr><td>Ex.3 &sum; x<sup>n</sup>/n!</td><td>super-linear</td><td>&asymp; 20 terms</td><td>machine epsilon (4.44e-16)</td></tr>
+    </table>
+    <p>The series (Exercise 3) is by far the most efficient way to compute
+       <code>e</code>, which is why computers and calculators evaluate
+       <code>exp(x)</code> with a truncated Taylor / rational series rather than
+       with either limit.</p>
+  </section>
+
+</main>
+
+<footer>
+  Series 1 Laboratory Dashboard &bull; Generated with Python &amp; Matplotlib
+  &bull; All values reproduced from the exercise reference tables.
+</footer>
+
+</body>
+</html>

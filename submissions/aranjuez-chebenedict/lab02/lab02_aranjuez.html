@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 02 — Finite Differences of Reservoir Depth</title>
+<style>
+  :root {
+    --ink: #0b2531;
+    --muted: #5b7180;
+    --line: #d7e3e6;
+    --teal: #0e7c86;
+    --teal-dark: #0b4f6c;
+    --amber: #ffb238;
+    --bg: #f2fafa;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+  }
+
+  header.hero {
+    background: linear-gradient(135deg, #0e7c86 0%, #0b4f6c 100%);
+    color: #fff;
+    padding: 32px 28px 60px 28px;
+    position: relative;
+  }
+
+  header.hero .kicker {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  header.hero h1 { margin: 12px 0 6px 0; font-size: 32px; }
+  header.hero .sub { opacity: 0.85; font-size: 14px; }
+
+  .wave {
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 60px;
+  }
+  .wave svg { width: 100%; height: 100%; display: block; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+
+  section.panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 6px 24px rgba(11, 79, 108, 0.08);
+  }
+
+  h2 {
+    margin: 0 0 12px 0;
+    color: var(--teal-dark);
+    font-size: 20px;
+  }
+
+  h3.label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 18px 0 8px 0;
+    font-weight: 700;
+  }
+
+  .chart {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+
+  th, td {
+    border-bottom: 1px solid var(--line);
+    padding: 9px 10px;
+    text-align: left;
+  }
+
+  th {
+    background: #effaf9;
+    color: var(--teal-dark);
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+  }
+
+  .stat-card {
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #f7fcfc;
+    border-left: 5px solid var(--teal);
+    box-shadow: 0 4px 14px rgba(11, 79, 108, 0.06);
+  }
+
+  .stat-card .label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .stat-card .value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+
+  code.eq {
+    display: block;
+    background: var(--teal-dark);
+    color: #eafbf8;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11.5px;
+    padding: 14px;
+  }
+
+  .placeholder-note {
+    background: #fff8e6;
+    border-left: 4px solid var(--amber);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #5c4a1c;
+    margin: 10px 0;
+  }
+
+  .placeholder-chart {
+    background: #eef7f8;
+    border: 2px dashed #9ec9d0;
+    border-radius: 10px;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="kicker">Lab Activity 02 &middot; sample2.py</span>
+  <h1>Finite Differences of Reservoir Depth</h1>
+  <div class="sub">
+    Forward, backward, and centered derivatives of Depth vs Timestamp &middot;
+    workbook: Data 01.xlsx &middot; sheet: Sensor Log &middot;
+    generated 2026-10-12
+  </div>
+  <div class="wave">
+    <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+      <path d="M0,32 C150,60 350,0 600,28 C850,56 1050,8 1200,30 L1200,60 L0,60 Z"
+            fill="#f2fafa"/>
+    </svg>
+  </div>
+</header>
+
+<main>
+
+  <div class="placeholder-note">
+    <strong>Template preview.</strong> The three chart slots below show placeholders.
+    When you run <code>sample2.py</code>, this file will be overwritten with real
+    base64-embedded charts — no other changes required.
+  </div>
+
+  <section class="panel">
+    <h2>1. Raw time series</h2>
+    <p>
+      Depth measurements plotted against the corresponding timestamps.
+      Record spans <strong>71.75 hours</strong> with <strong>288</strong> data points.
+    </p>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="label">Points</div>
+        <div class="value">288</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Duration</div>
+        <div class="value">71.75 h</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Mean &Delta;t</div>
+        <div class="value">900.0 s</div>
+      </div>
+    </div>
+    <div class="placeholder-chart">Raw depth-vs-time chart will appear here</div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Finite differences</h2>
+    <p>Three numerical derivatives computed from the sampled data:</p>
+    <code class="eq">Forward  : f'(t_i) &asymp; (y[i+1] &minus; y[i])   / &Delta;t
+Backward : f'(t_i) &asymp; (y[i]   &minus; y[i-1]) / &Delta;t
+Centered : f'(t_i) &asymp; (y[i+1] &minus; y[i-1]) / (&Delta;t_i + &Delta;t_i+1)</code>
+    <div class="placeholder-chart">Side-by-side-by-side derivative chart will appear here</div>
+  </section>
+
+  <section class="panel">
+    <h2>3. Summary statistics</h2>
+    <p>NaN edges (first/last rows where the formula can't be applied) are excluded.</p>
+    <table>
+      <tr>
+        <th>Method</th><th>Count</th><th>Mean</th>
+        <th>Std</th><th>Min</th><th>Max</th>
+      </tr>
+      <tr><td>Forward</td><td>287</td><td>0.000445</td><td>0.00186</td><td>-0.00484</td><td>0.00558</td></tr>
+      <tr><td>Backward</td><td>287</td><td>0.000445</td><td>0.00186</td><td>-0.00484</td><td>0.00558</td></tr>
+      <tr><td>Centered</td><td>286</td><td>0.000446</td><td>0.00131</td><td>-0.00375</td><td>0.00428</td></tr>
+    </table>
+    <h3 class="label">Distribution of centered differences</h3>
+    <div class="placeholder-chart">Histogram of centered differences will appear here</div>
+  </section>
+
+  <section class="panel">
+    <h2>4. Where the results live</h2>
+    <p>
+      All three derivative columns have been written back into the source workbook
+      <code>Data 01.xlsx</code> in sheet <code>Sensor Log</code>:
+    </p>
+    <table>
+      <tr><th>Column</th><th>Contents</th></tr>
+      <tr><td>G</td><td>Forward Diff (m/s)</td></tr>
+      <tr><td>H</td><td>Backward Diff (m/s)</td></tr>
+      <tr><td>I</td><td>Centered Diff (m/s)</td></tr>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  Generated by <code>sample2.py</code> &mdash; every number above was computed in Python;
+  the page contains no live computation.
+</footer>
+
+</body>
+</html>
